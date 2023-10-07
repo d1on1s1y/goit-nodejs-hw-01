@@ -1,7 +1,11 @@
-const nodemon = require("nodemon");
-const contactsFn = require("./contacts");
-const { Command } = require("commander");
-const program = new Command();
+const {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+} = require("./contacts.js");
+const { program } = require("commander");
+
 program
   .option("-a, --action <type>", "choose action")
   .option("-i, --id <type>", "user id")
@@ -10,30 +14,46 @@ program
   .option("-p, --phone <type>", "user phone");
 
 program.parse(process.argv);
+const options = program.opts();
 
-const argv = program.opts();
-
-function invokeAction({ action, id, name, email, phone }) {
+async function invokeAction({ action, id, name, email, phone }) {
   switch (action) {
     case "list":
-      contactsFn.listContacts();
+      try {
+        const list = await listContacts();
+        await console.table(list);
+      } catch (error) {
+        console.warn(error);
+      }
       break;
-
     case "get":
-      contactsFn.getContactById(id);
+      try {
+        const contact = await getContactById(id);
+        console.log(contact);
+      } catch (error) {
+        console.warn(error);
+      }
       break;
-
     case "add":
-      contactsFn.addContact(name, email, phone);
+      try {
+        const response = await addContact(name, email, phone);
+        console.log(response);
+      } catch (error) {
+        console.warn(error);
+      }
       break;
-
     case "remove":
-      contactsFn.removeContact(id);
+      try {
+        const removed = await removeContact(id);
+        console.log(removed);
+      } catch (error) {
+        console.warn(error);
+      }
       break;
-
     default:
       console.warn("\x1B[31m Unknown action type!");
+      break;
   }
 }
 
-invokeAction(argv);
+invokeAction(options);

@@ -1,55 +1,97 @@
-const fs = require("fs").promises;
+const fs = require("fs/promises");
 const path = require("path");
+const { nanoid } = require("nanoid");
 
-const contactsPath = path.join("db", "contacts.json");
+const contactsPath = path.join(__dirname, "/db/contacts.json");
+
 async function listContacts() {
-  console.log("listContacts()");
-  const data = await fs.readFile(contactsPath);
-  const contacts = JSON.parse(data);
-  console.table(contacts);
+  // ...твій код. Повертає масив контактів.
+  try {
+    const data = await fs.readFile(contactsPath, "utf-8");
+    const allContacts = JSON.parse(data);
+
+    return allContacts || null;
+  } catch (error) {
+    console.error(error);
+  }
 }
+
 async function getContactById(contactId) {
-  console.log("getContactById(qdggE76Jtbfd9eWJHrssH)");
-  const data = await fs.readFile(contactsPath);
-  const contacts = JSON.parse(data);
-  console.log(contacts.find((option) => option.id === contactId));
+  // ...твій код. Повертає об'єкт контакту з таким id. Повертає null, якщо контакт з таким id не знайдений.
+  if (!contactId) {
+    return "ID is required";
+  }
+
+  try {
+    const allContacts = await listContacts();
+
+    if (!allContacts) {
+      throw new error("A list of all contacts was not received.");
+    }
+
+    const selectedContact = allContacts.filter((contact) => {
+      return contact.id === contactId;
+    });
+    if (selectedContact.length === 0) {
+      return "Contact not found";
+    }
+    // console.log(selectedContact);
+    return selectedContact;
+  } catch (error) {
+    return error;
+  }
 }
 
 async function removeContact(contactId) {
-  console.log("removeContact(qdggE76Jtbfd9eWJHrssH)");
-  const data = await fs.readFile(contactsPath);
-  const contacts = JSON.parse(data);
-  contacts.splice(
-    contacts.findIndex((option) => option.id === contactId),
-    1
-  );
-  console.table(contacts);
+  // ...твій код. Повертає об'єкт видаленого контакту. Повертає null, якщо контакт з таким id не знайдений.
+  if (!contactId) {
+    return "ID is required";
+  }
+
+  try {
+    const allContacts = await listContacts();
+    if (!allContacts) {
+      throw new error("A list of all contacts was not received.");
+    }
+
+    const selectedContact = await allContacts.filter((contact) => {
+      return contact.id === contactId;
+    });
+
+    const newVersion = allContacts.filter((contact) => {
+      return contact.id !== contactId;
+    });
+
+    await fs.writeFile(contactsPath, JSON.stringify(newVersion, "", 2));
+    return selectedContact;
+  } catch (error) {
+    return error;
+  }
 }
 
 async function addContact(name, email, phone) {
-  console.log("addContact");
-  const newContact = {
-    id: makeid(21),
-    name: name,
-    email: email,
-    phone: phone,
-  };
-  const data = await fs.readFile(contactsPath);
-  const contacts = JSON.parse(data);
-  contacts.splice(0, 0, newContact);
-  console.table(contacts);
-}
-function makeid(length) {
-  let result = "";
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
+  // ...твій код. Повертає об'єкт доданого контакту.
+  try {
+    const allContacts = await listContacts();
+    if (!allContacts) {
+      throw new error("A list of all contacts was not received.");
+    }
+
+    const newContact = {
+      id: nanoid(),
+      name,
+      email,
+      phone,
+    };
+
+    allContacts.push(newContact);
+
+    await fs.writeFile(contactsPath, JSON.stringify(allContacts, "", 2));
+
+    return newContact;
+  } catch (error) {
+    return error;
   }
-  return result;
 }
 
 module.exports = {
@@ -57,5 +99,4 @@ module.exports = {
   getContactById,
   removeContact,
   addContact,
-  makeid,
 };
